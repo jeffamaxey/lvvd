@@ -138,8 +138,7 @@ def srjd_call_valuation(v0, kappa, theta, sigma,
     '''
     v = srjd_simulation(v0, kappa, theta, sigma,
                         lamb, mu, delta, T, M, I, fixed_seed)
-    call_value = np.exp(-r * T) * sum(np.maximum(v[-1] - K, 0)) / I
-    return call_value
+    return np.exp(-r * T) * sum(np.maximum(v[-1] - K, 0)) / I
 
 if __name__ is '__main__':
     call_value = srjd_call_valuation(v0, kappa, theta, sigma,

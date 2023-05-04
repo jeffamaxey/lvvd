@@ -47,8 +47,7 @@ def srjd_valuation_function(p0):
             diffs.append((value - option['PRICE']) / option['PRICE'])
         else:
             diffs.append(value - option['PRICE'])
-    diffs = np.array(diffs)
-    return diffs
+    return np.array(diffs)
 
 
 def srjd_error_function(p0):
@@ -136,11 +135,14 @@ def srjd_model_calibration(data, p0=None, rel=False, mats=None):
 
     # local optimization
     i = 0
-    opt = sco.fmin(srjd_error_function, p0,
-                   xtol=0.0000001, ftol=0.0000001,
-                   maxiter=550, maxfun=700)
-
-    return opt
+    return sco.fmin(
+        srjd_error_function,
+        p0,
+        xtol=0.0000001,
+        ftol=0.0000001,
+        maxiter=550,
+        maxfun=700,
+    )
 
 
 def plot_calibration_results(option_data, opt, mats):
@@ -176,7 +178,7 @@ def plot_calibration_results(option_data, opt, mats):
             axarr[z, 1].set_title('differences')
         os = option_data[option_data.MATURITY == mat]
         strikes = os.STRIKE.values
-        axarr[z, 0].set_ylabel('%s' % str(mat)[:10])
+        axarr[z, 0].set_ylabel(f'{str(mat)[:10]}')
         axarr[z, 0].plot(strikes, os.PRICE.values, label='market quotes')
         axarr[z, 0].plot(strikes, os.MODEL.values, 'ro', label='model prices')
         axarr[z, 0].legend(loc=0)
