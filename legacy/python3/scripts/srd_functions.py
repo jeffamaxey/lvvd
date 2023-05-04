@@ -33,9 +33,7 @@ def futures_price(v0, kappa, theta, zeta, T):
     '''
     alpha = kappa * theta
     beta = kappa + zeta
-    future = (alpha / beta * (1 - math.exp(-beta * T))
-                               + math.exp(-beta * T) * v0)
-    return future
+    return alpha / beta * (1 - math.exp(-beta * T)) + math.exp(-beta * T) * v0
 
 
 def cx(K, gamma, nu, lamb):
@@ -94,12 +92,14 @@ def call_price(v0, kappa, theta, sigma, zeta, T, r, K):
     nu = 4 * alpha / sigma ** 2
     lamb = gamma * math.exp(-beta * T) * v0
 
-    # the pricing formula
-    call = (D * math.exp(-beta * T) * v0 * cx(K, gamma, nu + 4, lamb)
-      + D * (alpha / beta) * (1 - math.exp(-beta * T))
-      * cx(K, gamma, nu + 2, lamb)
-      - D * K * cx(K, gamma, nu, lamb))
-    return call
+    return (
+        D * math.exp(-beta * T) * v0 * cx(K, gamma, nu + 4, lamb)
+        + D
+        * (alpha / beta)
+        * (1 - math.exp(-beta * T))
+        * cx(K, gamma, nu + 2, lamb)
+        - D * K * cx(K, gamma, nu, lamb)
+    )
 
 
 def generate_paths(x0, kappa, theta, sigma, T, M, I):
@@ -182,5 +182,4 @@ def call_estimator(v0, kappa, theta, sigma, T, r, K, M, I):
         MCS estimator for European call option
     '''
     V = generate_paths(v0, kappa, theta, sigma, T, M, I)
-    callvalue = math.exp(-r * T) * np.sum(np.maximum(V[-1] - K, 0)) / I
-    return callvalue
+    return math.exp(-r * T) * np.sum(np.maximum(V[-1] - K, 0)) / I

@@ -16,11 +16,10 @@ import datetime as dt
 from bs4 import BeautifulSoup
 from index_date_functions import *
 
-#
-# The URL template
-#
-URL = 'https://www.eurex.com/ex-en/data/statistics/market-statistics-online/'
-URL += '100!onlineStats?productGroupId=13370&productId=69660&viewType=3&'
+URL = (
+    'https://www.eurex.com/ex-en/data/statistics/market-statistics-online/'
+    + '100!onlineStats?productGroupId=13370&productId=69660&viewType=3&'
+)
 URL += 'cp=%s&month=%s&year=%s&busDate=%s'
 
 
@@ -41,7 +40,7 @@ def collect_option_series(month, year, start):
     dataset: pandas DataFrame object
         object containing the collected data
     '''
-    end = dt.datetime.today()
+    end = dt.datetime.now()
     delta = (end - start).days
 
     dataset = pd.DataFrame()
@@ -49,11 +48,7 @@ def collect_option_series(month, year, start):
         date = start + dt.timedelta(t)
         dummy = get_data(month, year, date)  # get data for one day
         if len(dummy) != 0:
-            if len(dataset) == 0:
-                dataset = dummy
-            else:
-                dataset = pd.concat((dataset, dummy))  # add data
-
+            dataset = dummy if len(dataset) == 0 else pd.concat((dataset, dummy))
     return dataset
 
 
@@ -88,9 +83,7 @@ def get_data(month, year, date):
     puts = puts.rename(columns={'Daily settlem. price': 'Put_Price'})
     puts = pd.DataFrame(puts.pop('Put_Price').astype(float))
 
-    dataset = merge_and_filter(puts, calls)   # merges the two time series
-
-    return dataset
+    return merge_and_filter(puts, calls)
 
 
 def get_data_from_www(oType, matMonth, matYear, date):
@@ -114,8 +107,7 @@ def get_data_from_www(oType, matMonth, matYear, date):
     '''
 
     url = URL % (oType, matMonth, matYear, date)  # parametrizes the URL
-    a = requests.get(url).text
-    return a
+    return requests.get(url).text
 
 
 def merge_and_filter(puts, calls):
@@ -161,20 +153,26 @@ def parse_data(data, date):
         transformed option raw data
     '''
     
-    data_list = list()
     date_value = dt.date(date.year, date.month, date.day)
     soup = BeautifulSoup(data, 'html.parser')
-    
+
     tables = soup.select('table.dataTable')
     if len(tables) != 1:
         raise ValueError('table selector is not unique')
     else:
         table = tables[0]
     columns = ['Pricing day',] + [cell.get_text() for cell in table.find_all('th')]
-        
-    for line in table.find_all('tr')[:-1]:
-        data_list.append([date_value,]+[float(cell.get_text().replace(',','')) for cell in line.find_all('td')])
-    
+
+    data_list = [
+        [
+            date_value,
+        ]
+        + [
+            float(cell.get_text().replace(',', ''))
+            for cell in line.find_all('td')
+        ]
+        for line in table.find_all('tr')[:-1]
+    ]
     dataset = pd.DataFrame(data_list, columns=columns)
     dataset = dataset.set_index(['Pricing day','Strike price'])
     return dataset
@@ -192,7 +190,7 @@ def data_collection(path=''):
     # file to store data
     store = pd.HDFStore(path + 'index_option_series.h5', 'a')
 
-    today = dt.datetime.today()
+    today = dt.datetime.now()
     start = today - dt.timedelta(31)  # the last 31 days
 
     day = start.day
@@ -224,9 +222,8 @@ def data_collection(path=''):
                      dataset.ix[index_new - index_old]))  # add the new data
 
                 store[series_name] = dummy
-        else:
-            if len(dataset) > 0:
+        elif len(dataset) > 0:
             # if series is new, write whole data set into data store
-                store[series_name] = dataset
+            store[series_name] = dataset
 
     store.close()

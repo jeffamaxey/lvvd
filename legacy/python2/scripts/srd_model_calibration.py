@@ -67,10 +67,10 @@ def valuation_function(p0):
         array of call prices
     '''
     kappa, theta, sigma = p0
-    call_prices = []
-    for strike in strikes:
-        call_prices.append(call_price(v0, kappa, theta,
-                                   sigma, zeta, ttm, r, strike))
+    call_prices = [
+        call_price(v0, kappa, theta, sigma, zeta, ttm, r, strike)
+        for strike in strikes
+    ]
     call_prices = np.array(call_prices)
     return call_prices
 
@@ -154,10 +154,14 @@ def model_calibration(option_data, rel=False, mat='2014-07-18'):
 
     # local optimization
     i = 0
-    opt = sco.fmin(error_function, p0, xtol=0.0000001, ftol=0.0000001,
-                                 maxiter=1000, maxfun=1500)
-
-    return opt
+    return sco.fmin(
+        error_function,
+        p0,
+        xtol=0.0000001,
+        ftol=0.0000001,
+        maxiter=1000,
+        maxfun=1500,
+    )
 
 
 def plot_calibration_results(opt):

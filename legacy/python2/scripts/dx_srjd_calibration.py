@@ -106,8 +106,7 @@ def srd_forward_error(p0):
     if p0[0] < 0 or p0[1] < 0 or p0[2] < 0:
         return 100
     f_model = dx.srd_forwards(initial_value, p0, t)
-    MSE = np.sum((f - f_model) ** 2) / len(f)
-    return MSE
+    return np.sum((f - f_model) ** 2) / len(f)
 
 
 def generate_shift_base(pricing_date, futures):
@@ -140,8 +139,7 @@ def generate_shift_base(pricing_date, futures):
     # calculation of shift values
     f_model = dx.srd_forwards(initial_value, opt, t)
     shifts = f - f_model
-    shift_base = np.array((t, shifts)).T
-    return shift_base
+    return np.array((t, shifts)).T
 
 
 def srjd_get_option_models(pricing_date, option_selection, futures):
@@ -224,9 +222,7 @@ def srjd_calculate_model_values(p0):
     # estimate and collect all option model present values
     results = [option_models[option].present_value(fixed_seed=True)
                for option in option_models]
-    # combine the results with the option models in a dictionary
-    model_values = dict(zip(option_models, results))
-    return model_values
+    return dict(zip(option_models, results))
 
 
 def srjd_mean_squared_error(p0, penalty=True):
@@ -251,23 +247,14 @@ def srjd_mean_squared_error(p0, penalty=True):
     global option_selection, vstoxx_model, option_models, first, last
     # calculate the model values for the option selection
     model_values = srjd_calculate_model_values(p0)
-    option_diffs = {}  # dictionary to collect differences
-    for option in model_values:
-        # differences between model value and market quote
-        option_diffs[option] = (model_values[option]
-                             - option_selection['PRICE'].loc[option])
+    option_diffs = {
+        option: (model_values[option] - option_selection['PRICE'].loc[option])
+        for option in model_values
+    }
     # calculation of mean-squared error
     MSE = np.sum(np.array(option_diffs.values()) ** 2) / len(option_diffs)
-    if first is True:
-        # if in first optimization, no penalty
-        penalty = 0.0
-    else:
-        # if 2, 3, ... optimization, penalize deviation from previous
-        # optimal parameter combination
-        penalty = (np.sum((p0 - last) ** 2))
-    if penalty is False:
-        return MSE
-    return MSE + penalty
+    penalty = 0.0 if first is True else (np.sum((p0 - last) ** 2))
+    return MSE if penalty is False else MSE + penalty
 
 
 def srjd_get_parameter_series(pricing_date_list):
@@ -326,8 +313,7 @@ def srjd_get_parameter_series(pricing_date_list):
                   index=[0]), ignore_index=True)
         first = False  # set to False after first iteration
         last = opt  # store optimal parameters for reference
-        print ("Pricing Date %s" % str(pricing_date)[:10]
-               + " | MSE %6.5f" % MSE)
+        print((f"Pricing Date {str(pricing_date)[:10]}" + " | MSE %6.5f" % MSE))
     return parameters
 
 
@@ -350,16 +336,16 @@ def srjd_plot_model_fit(parameters):
     mats = sorted(mats)
     # arranging the canvas for the subplots
     height = max(8, 2 * len(mats))
+    wi = 0.3
     if len(mats) == 1:
         mat = mats[0]
         fig, axarr = plt.subplots(2, figsize=(10, height))
         os = option_selection[option_selection.MATURITY == mat]
         strikes = os.STRIKE.values
-        axarr[0].set_ylabel('%s' % str(mat)[:10])
+        axarr[0].set_ylabel(f'{str(mat)[:10]}')
         axarr[0].plot(strikes, os.PRICE.values, label='Market Quotes')
         axarr[0].plot(strikes, os.MODEL.values, 'ro', label='Model Prices')
         axarr[0].legend(loc=0)
-        wi = 0.3
         axarr[1].bar(strikes - wi / 2, os.MODEL.values - os.PRICE.values,
                     width=wi)
         axarr[0].set_xlabel('strike')
@@ -369,11 +355,10 @@ def srjd_plot_model_fit(parameters):
         for z, mat in enumerate(mats):
             os = option_selection[option_selection.MATURITY == mat]
             strikes = os.STRIKE.values
-            axarr[z, 0].set_ylabel('%s' % str(mat)[:10])
+            axarr[z, 0].set_ylabel(f'{str(mat)[:10]}')
             axarr[z, 0].plot(strikes, os.PRICE.values, label='Market Quotes')
             axarr[z, 0].plot(strikes, os.MODEL.values, 'ro', label='Model Prices')
             axarr[z, 0].legend(loc=0)
-            wi = 0.3
             axarr[z, 1].bar(strikes - wi / 2,
                             os.MODEL.values - os.PRICE.values, width=wi)
         axarr[z, 0].set_xlabel('strike')

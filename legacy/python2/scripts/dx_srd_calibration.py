@@ -146,9 +146,7 @@ def srd_calculate_model_values(p0):
     # estimate and collect all option model present values
     results = [option_models[option].present_value(fixed_seed=True)
                for option in option_models]
-    # combine the results with the option models in a dictionary
-    model_values = dict(zip(option_models, results))
-    return model_values
+    return dict(zip(option_models, results))
 
 
 def srd_mean_squared_error(p0, penalty=True):
@@ -172,23 +170,14 @@ def srd_mean_squared_error(p0, penalty=True):
     global option_selection, vstoxx_model, option_models, first, last
     # calculate the model values for the option selection
     model_values = srd_calculate_model_values(p0)
-    option_diffs = {}  # dictionary to collect differences
-    for option in model_values:
-        # differences between model value and market quote
-        option_diffs[option] = (model_values[option]
-                             - option_selection['PRICE'].loc[option])
+    option_diffs = {
+        option: (model_values[option] - option_selection['PRICE'].loc[option])
+        for option in model_values
+    }
     # calculation of mean-squared error
     MSE = np.sum(np.array(option_diffs.values()) ** 2) / len(option_diffs)
-    if first is True:
-        # if in global optimization, no penalty
-        penalty = 0.0
-    else:
-        # if in local optimization, penalize deviation from previous
-        # optimal parameter combination
-        penalty = (np.sum((p0 - last) ** 2)) / 100
-    if penalty is False:
-        return MSE
-    return MSE + penalty
+    penalty = 0.0 if first is True else (np.sum((p0 - last) ** 2)) / 100
+    return MSE if penalty is False else MSE + penalty
 
 
 def srd_get_parameter_series(pricing_date_list, maturity_list):
@@ -245,9 +234,15 @@ def srd_get_parameter_series(pricing_date_list, maturity_list):
                       index=[0]), ignore_index=True)
             first = False  # set to False after first iteration
             last = opt  # store optimal parameters for reference
-            print ("Maturity %s" % str(maturity)[:10]
-                   + " | Pricing Date %s" % str(pricing_date)[:10]
-                   + " | MSE %6.5f" % MSE)
+            print(
+                (
+                    (
+                        f"Maturity {str(maturity)[:10]}"
+                        + f" | Pricing Date {str(pricing_date)[:10]}"
+                    )
+                    + " | MSE %6.5f" % MSE
+                )
+            )
     return parameters
 
 if __name__ is '__main__':
