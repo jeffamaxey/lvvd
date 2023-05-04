@@ -52,10 +52,7 @@ def write_results(sim_results, name, SEED, runs, steps, paths, mo_match,
     'start_date': d1,
     'end_date': d2
     }
-    df = pd.concat([sim_results,
-                    pd.DataFrame([results])],
-                    ignore_index=True)
-    return df
+    return pd.concat([sim_results, pd.DataFrame([results])], ignore_index=True)
 
 
 def write_to_database(sim_results, filename=filename):

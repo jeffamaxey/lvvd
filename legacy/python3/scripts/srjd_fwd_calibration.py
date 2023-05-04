@@ -15,7 +15,7 @@ i = 0  # counter for calibration runs
 
 # reading the VSTOXX futures quotes
 path = './data/'
-h5 = pd.HDFStore(path + 'vstoxx_data_31032014.h5', 'r')
+h5 = pd.HDFStore(f'{path}vstoxx_data_31032014.h5', 'r')
 futures_quotes = h5['futures_data']
 h5.close()
 
@@ -55,8 +55,7 @@ def srd_forwards(p0):
             (2 * g + (kappa + g) * (np.exp(g * t) - 1)))
     sum2 = v0 * ((4 * g ** 2 * np.exp(g * t)) /
                  (2 * g + (kappa + g) * (np.exp(g * t) - 1)) ** 2)
-    forwards = sum1 + sum2
-    return forwards
+    return sum1 + sum2
 
 
 def srd_fwd_error(p0):

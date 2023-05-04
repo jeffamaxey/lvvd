@@ -149,9 +149,7 @@ def srd_calculate_model_values(p0):
     # estimate and collect all option model present values
     results = [option_models[option].present_value(fixed_seed=True)
                for option in option_models]
-    # combine the results with the option models in a dictionary
-    model_values = dict(zip(option_models, results))
-    return model_values
+    return dict(zip(option_models, results))
 
 
 def srd_mean_squared_error(p0, penalty=True):
@@ -175,23 +173,14 @@ def srd_mean_squared_error(p0, penalty=True):
     global option_selection, vstoxx_model, option_models, first, last
     # calculate the model values for the option selection
     model_values = srd_calculate_model_values(p0)
-    option_diffs = {}  # dictionary to collect differences
-    for option in model_values:
-        # differences between model value and market quote
-        option_diffs[option] = (model_values[option]
-                             - option_selection['PRICE'].loc[option])
+    option_diffs = {
+        option: (model_values[option] - option_selection['PRICE'].loc[option])
+        for option in model_values
+    }
     # calculation of mean-squared error
     MSE = np.sum(np.array(list(option_diffs.values())) ** 2) / len(option_diffs)
-    if first:
-        # if in global optimization, no penalty
-        pen = 0.0
-    else:
-        # if in local optimization, penalize deviation from previous
-        # optimal parameter combination
-        pen = np.mean((p0 - last) ** 2)
-    if not penalty:
-        return MSE
-    return MSE + pen
+    pen = 0.0 if first else np.mean((p0 - last) ** 2)
+    return MSE + pen if penalty else MSE
 
 
 def srd_get_parameter_series(pricing_date_list, maturity_list):
@@ -248,9 +237,15 @@ def srd_get_parameter_series(pricing_date_list, maturity_list):
                       index=[0]), ignore_index=True)
             first = False  # set to False after first iteration
             last = opt  # store optimal parameters for reference
-            print ("Maturity %s" % str(maturity)[:10]
-                   + " | Pricing Date %s" % str(pricing_date)[:10]
-                   + " | MSE %6.5f" % MSE)
+            print(
+                (
+                    (
+                        f"Maturity {str(maturity)[:10]}"
+                        + f" | Pricing Date {str(pricing_date)[:10]}"
+                    )
+                    + " | MSE %6.5f" % MSE
+                )
+            )
     return parameters
 
 if __name__ == '__main__':
@@ -270,7 +265,7 @@ if __name__ == '__main__':
         to_plot.plot(subplots=True, color='b', figsize=(10, 12),
                  title='SRD | ' + str(mat)[:10])
         plt.tight_layout()
-        plt.savefig('./images/dx_srd_cali_1_%s_.png' % str(mat)[:10])
+        plt.savefig(f'./images/dx_srd_cali_1_{str(mat)[:10]}_.png')
         # plotting the histogram of the MSE values
         fig, ax = plt.subplots()
         dat = parameters.MSE
@@ -279,6 +274,6 @@ if __name__ == '__main__':
                         lw=1.5, label='mean = %5.4f' % dat.mean())
         plt.legend()
         plt.tight_layout()
-        plt.savefig('./images/dx_srd_cali_1_hist_%s_.png' % str(mat)[:10])
+        plt.savefig(f'./images/dx_srd_cali_1_hist_{str(mat)[:10]}_.png')
     # measuring and printing the time needed for the script execution
     print('Time in minutes %.2f' % ((time.time() - t0) / 60))

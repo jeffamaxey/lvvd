@@ -40,17 +40,11 @@ def compute_subindex(data, delta_T, R):
     # differences between the different strikes of the series
     data['delta_K'].iloc[1:-1] = [(data['Strike price'][i + 1]
             - data['Strike price'][i - 1]) / 2 for i in data.index[1:-1]]
-            # where possible, for the i-th entry it is
-            # half of the difference between the (i-1)-th
-            # and (i+1)-th price
     #  for i=0 it is just the difference to the next strike
     data['delta_K'].iloc[0] = data['Strike price'][1] - data['Strike price'][0]
 
     data['delta_K'].iloc[data.index[-1:]] = float(data['Strike price'][-1:]) \
             - float(data['Strike price'][-2:-1])
-            # for the last entry, it is just the difference
-            # between the second but last strike and the last strike price
-
     # find the smallest difference between put and call price
     min_index = data.Diff_Put_Call.argmin()
 
@@ -64,8 +58,9 @@ def compute_subindex(data, delta_T, R):
     K_0_index = data.index[data['Strike price'] == K_0][0]
 
     # selects the OTM options
-    data['M'] = pd.concat((data.Put_Price[0:K_0_index],
-                           data.Call_Price[K_0_index:]))
+    data['M'] = pd.concat(
+        (data.Put_Price[:K_0_index], data.Call_Price[K_0_index:])
+    )
 
     # ATM we take the average of put and call price
     data['M'].iloc[K_0_index] = (data['Call_Price'][K_0_index]
@@ -79,8 +74,7 @@ def compute_subindex(data, delta_T, R):
     fterm = 1. / delta_T * (forward_price / K_0 - 1) ** 2
     # summing up
     sigma = 2 / delta_T * np.sum(data.MFactor) - fterm
-    subVSTOXX = 100 * math.sqrt(sigma)
-    return subVSTOXX
+    return 100 * math.sqrt(sigma)
 
 
 def make_subindex(path):
@@ -101,28 +95,27 @@ def make_subindex(path):
 
     # the data source, created with index_collect_option_data.py
     datastore = pd.HDFStore(path + 'index_option_series_2015.h5', 'r')
-    
-    max_date = dt.datetime.today()  # find the latest date in the source
+
+    max_date = dt.datetime.now()
     for series in datastore.keys():
         dummy_date = datastore[series].index.get_level_values(0)[0]
         dummy_date = dummy_date.to_pydatetime()
         if dummy_date > max_date:
             max_date = dummy_date
 
-    start_date = dt.datetime.today()  # find the earliest date in the source
+    start_date = dt.datetime.now()
     for series in datastore.keys():
         dummy_date = datastore[series].index.get_level_values(0)[0]
         dummy_data = dummy_date.to_pydatetime()
         if dummy_date < start_date:
             start_date = dummy_date
 
-    V1 = dict()  # dicts to store the values, V stands for the sub-indices,
-                 # T for their expiry
-    V2 = dict()
-    V3 = dict()
-    T1 = dict()
-    T2 = dict()
-    T3 = dict()
+    V1 = {}
+    V2 = {}
+    V3 = {}
+    T1 = {}
+    T2 = {}
+    T3 = {}
 
     # from start_date to max_date, but only weekdays
     for day in pd.bdate_range(start=start_date.date(), end=max_date.date()):
@@ -168,8 +161,14 @@ def make_subindex(path):
             T3[day] = settlement_date_2
 
     datastore.close()
-    # create the pandas DataFrame object and return it
-    df = pd.DataFrame(data={'V6I1': V1, 'Expiry V6I1': T1, 'V6I2': V2,
-                    'Expiry V6I2': T2, 'V6I3': V3, 'Expiry V6I3': T3})
-    return df
+    return pd.DataFrame(
+        data={
+            'V6I1': V1,
+            'Expiry V6I1': T1,
+            'V6I2': V2,
+            'Expiry V6I2': T2,
+            'V6I3': V3,
+            'Expiry V6I3': T3,
+        }
+    )
 

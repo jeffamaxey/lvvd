@@ -117,6 +117,8 @@ if __name__ == '__main__':
     t0 = time.time()
     sim_results = pd.DataFrame()
 
+    # output
+    br = "    ----------------------------------"
     for vr in var_red:  # variance reduction techniques
         mo_match, anti_paths = vr
         for M in steps_list:  # number of time steps
@@ -128,10 +130,7 @@ if __name__ == '__main__':
                 l = 0.0
                 errors = 0
                 # name of the simulation setup
-                name = ('Call_' + str(runs) + '_'
-                        + str(M) + '_' + str(I / 1000)
-                        + '_' + str(mo_match)[0] + str(anti_paths)[0] +
-                        '_' + str(PY1 * 100) + '_' + str(PY2 * 100))
+                name = f'Call_{str(runs)}_{str(M)}_{str(I / 1000)}_{str(mo_match)[0]}{str(anti_paths)[0]}_{str(PY1 * 100)}_{str(PY2 * 100)}'
                 np.random.seed(SEED)  # RNG seed value
                 for run in range(runs):  # simulation runs
                     print("\nSimulation Run %d of %d" % (run + 1, runs))
@@ -142,7 +141,6 @@ if __name__ == '__main__':
                     for T in maturity_list:  # time-to-maturity
                         dt = T / M  # time interval in year fractions
                         V = generate_paths(v0, kappa, theta, sigma, T, M, I)
-                            # volatility process paths
                         print("\n  Results for Time-to-Maturity %6.3f" % T)
                         print("  -----------------------------------------")
                         for K in strike_list:  # Strikes
@@ -157,8 +155,6 @@ if __name__ == '__main__':
                             rdiff = diff / callalue
                             abs_errors.append(diff)
                             rel_errors.append(rdiff * 100)
-                            # output
-                            br = "    ----------------------------------"
                             print ("\n  Results for Strike %4.2f\n" % K)
                             print ("    European Op. Value MCS    %8.4f" %
                                         call_estimate)
